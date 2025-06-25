@@ -442,5 +442,9 @@ def reset_manual_close():
     if os.path.exists("manual_close_request.txt"):
         os.remove("manual_close_request.txt")
 
+# Ajoute ces lignes :
+ORDER_TYPE_TAKE_PROFIT_MARKET = "TAKE_PROFIT_MARKET"
+ORDER_TYPE_STOP_MARKET = "STOP_MARKET"
+
 if __name__ == "__main__":
     run_bot()

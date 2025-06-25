@@ -4,3 +4,4 @@ numpy
 python-dotenv
 requests
 pandas
+python-telegram-bot==13.15

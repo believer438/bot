@@ -6,6 +6,7 @@ import pandas as pd
 from datetime import datetime
 from binance.client import Client
 from binance.enums import *
+from binance.enums 
 from ta.trend import EMAIndicator
 from dotenv import load_dotenv
 import requests
@@ -171,8 +172,7 @@ def update_trailing_sl_and_tp(direction, entry_price):
         max_gain_pct_notified = 0 
         current_sl = None
         current_tp_pct = take_profit_pct 
-        t = threading.current_thread()
-        while getattr(t, "do_run", True):
+        while True:
             price = float(client.futures_mark_price(symbol=symbol)["markPrice"])
 
             # Calcul du gain en %

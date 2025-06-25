@@ -6,11 +6,9 @@ import pandas as pd
 from datetime import datetime
 from binance.client import Client
 from binance.enums import *
-from binance.enums 
 from ta.trend import EMAIndicator
 from dotenv import load_dotenv
 import requests
-import datetime
 import traceback
 import threading
 

@@ -166,11 +166,12 @@ def get_trailing_tp(entry_price, current_price, direction, current_tp_pct):
 
 # === MISE À JOUR TRAILING SL ET TP EN CONTINU ===
 def update_trailing_sl_and_tp(direction, entry_price):
+    t = threading.current_thread()
     try:
         max_gain_pct_notified = 0 
         current_sl = None
         current_tp_pct = take_profit_pct 
-        while True:
+        while getattr(t, "do_run", True):
             price = float(client.futures_mark_price(symbol=symbol)["markPrice"])
 
             # Calcul du gain en %

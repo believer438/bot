@@ -412,9 +412,13 @@ def run_bot():
 
                 signal = get_ema_cross()
 
-                if signal and (signal != last_signal or last_candle_time != current_candle_time):
+                # Affichage dans le terminal du résultat de la détection
+                if signal:
                     print(f"Signal détecté : {signal} sur la bougie 5m {datetime.datetime.fromtimestamp(current_candle_time / 1000)}")
+                else:
+                    print(f"Aucun croisement détecté sur la bougie 5m {datetime.datetime.fromtimestamp(current_candle_time / 1000)}")
 
+                if signal and (signal != last_signal or last_candle_time != current_candle_time):
                     if position_open:
                         close_position()
                         time.sleep(3)

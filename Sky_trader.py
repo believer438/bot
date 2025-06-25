@@ -3,7 +3,7 @@ import time
 import csv
 import numpy as np
 import pandas as pd
-from datetime import datetime
+import datetime  # Utilise uniquement cet import
 from binance.client import Client
 from binance.enums import *
 from ta.trend import EMAIndicator
@@ -44,6 +44,7 @@ if not os.path.exists(log_file):
 position_open = False
 current_direction = None
 current_entry_price = None
+current_quantity = None  # Ajout pour mémoriser la quantité
 
 # === THREADS GLOBAUX POUR SUIVI DES POSITIONS ===
 trailing_thread = None
@@ -253,8 +254,9 @@ def update_trade_status(entry_price, new_status):
 
 # === SURVEILLANCE DU TAKE PROFIT ===
 def wait_for_tp_or_exit(direction, entry_price, tp):
+    t = threading.current_thread()
     try:
-        while True:
+        while getattr(t, "do_run", True):
             price = float(client.futures_mark_price(symbol=symbol)["markPrice"])
             if (direction == "bullish" and price >= tp) or (direction == "bearish" and price <= tp):
                 update_trade_status(entry_price, "FERMÉ - TP")
@@ -265,9 +267,8 @@ def wait_for_tp_or_exit(direction, entry_price, tp):
         print("❌ Erreur TP Check :", e)
 
 # === OUVERTURE D'UNE POSITION (gestion des threads et logs détaillés) ===
-
 def open_trade(direction):
-    global position_open, current_direction, current_entry_price, trailing_thread, tp_thread
+    global position_open, current_direction, current_entry_price, current_quantity, trailing_thread, tp_thread
 
     if position_open:
         return
@@ -319,6 +320,7 @@ def open_trade(direction):
         position_open = True
         current_direction = direction
         current_entry_price = price
+        current_quantity = qty  # Stocke la quantité utilisée
 
         # Arrêt des anciens threads si existants
         if trailing_thread and trailing_thread.is_alive():
@@ -329,6 +331,8 @@ def open_trade(direction):
         # Lancement des nouveaux threads
         trailing_thread = threading.Thread(target=update_trailing_sl_and_tp, args=(direction, price), daemon=True)
         tp_thread = threading.Thread(target=wait_for_tp_or_exit, args=(direction, price, take_profit), daemon=True)
+        trailing_thread.do_run = True
+        tp_thread.do_run = True
         trailing_thread.start()
         tp_thread.start()
 
@@ -338,17 +342,16 @@ def open_trade(direction):
         traceback.print_exc()
         send_telegram(err_msg)
 
-# === FERME LAPOSITION AU PROCHAIN CROISEMENT ===
-
+# === FERMETURE DE POSITION AU PROCHAIN CROISEMENT ===
 def close_position():
-    global position_open, current_direction, current_entry_price, trailing_thread, tp_thread
+    global position_open, current_direction, current_entry_price, current_quantity, trailing_thread, tp_thread
     try:
         if not position_open:
             return
 
         side = SIDE_SELL if current_direction == "bullish" else SIDE_BUY
         price = float(client.get_symbol_ticker(symbol=symbol)["price"])
-        qty = calculate_quantity(price)
+        qty = current_quantity if current_quantity else calculate_quantity(price)
         client.futures_create_order(
             symbol=symbol,
             side=side,
@@ -369,6 +372,7 @@ def close_position():
         position_open = False
         current_direction = None
         current_entry_price = None
+        current_quantity = None
 
     except Exception as e:
         err_msg = f"❌ Erreur fermeture position : {e}"
@@ -408,9 +412,13 @@ def run_bot():
 
                 signal = get_ema_cross()
 
-                if signal and (signal != last_signal or last_candle_time != current_candle_time):
+                # Affichage dans le terminal du résultat de la détection
+                if signal:
                     print(f"Signal détecté : {signal} sur la bougie 5m {datetime.datetime.fromtimestamp(current_candle_time / 1000)}")
+                else:
+                    print(f"Aucun croisement détecté sur la bougie 5m {datetime.datetime.fromtimestamp(current_candle_time / 1000)}")
 
+                if signal and (signal != last_signal or last_candle_time != current_candle_time):
                     if position_open:
                         close_position()
                         time.sleep(3)
@@ -444,6 +452,7 @@ def reset_manual_close():
 # Ajoute ces lignes :
 ORDER_TYPE_TAKE_PROFIT_MARKET = "TAKE_PROFIT_MARKET"
 ORDER_TYPE_STOP_MARKET = "STOP_MARKET"
+ORDER_TYPE_MARKET = "MARKET"
 
 if __name__ == "__main__":
     run_bot()

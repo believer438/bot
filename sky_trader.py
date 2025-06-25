@@ -25,7 +25,7 @@ client = Client(API_KEY, API_SECRET)
 # === PARAMÈTRES DU BOT ===
 symbol = "ALGOUSDT"
 leverage = 10
-quantity_usdt = 10
+quantity_usdt = 7  # Montant fixe par position en USDT
 stop_loss_pct = 0.006          # SL initial 0.6%
 take_profit_pct = 0.015        # TP initial 1.5%
 interval = Client.KLINE_INTERVAL_5MINUTE
@@ -90,19 +90,10 @@ def get_ema_cross():
 
 # === CALCUL DE LA QUANTITÉ DE L'ORDRE SELON LE PRIX D'ENTRÉE (vérification ajoutée) ===
 def calculate_quantity(entry_price):
-    # Récupère le solde USDT disponible sur le compte Futures
-    balance = client.futures_account_balance()
-    usdt_balance = 0
-    for asset in balance:
-        if asset['asset'] == 'USDT':
-            usdt_balance = float(asset['balance'])
-            break
-    # Utilise 100% du solde disponible
-    qty = round((usdt_balance * leverage) / entry_price, 1)
-    if qty <= 0:
-        send_telegram("❌ Quantité calculée nulle ou négative, aucun ordre envoyé.")
-        raise ValueError("Quantité calculée nulle ou négative")
-    return qty
+    # Utilise un montant fixe (quantity_usdt) pour calculer la quantité à acheter
+    qty = (quantity_usdt * leverage) / entry_price
+    # arrondi à 2 ou 3 décimales selon la paire (ici 2 pour ALGOUSDT)
+    return round(qty, 2)
 
 # === ENREGISTREMENT DANS LE JOURNAL DES TRADES ===
 def log_trade(direction, entry_price, sl, tp, mode, status="OUVERT"):

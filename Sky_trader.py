@@ -25,7 +25,7 @@ client = Client(API_KEY, API_SECRET)
 # === PARAMÈTRES DU BOT ===
 symbol = "ALGOUSDT"
 leverage = 10
-quantity_usdt = 10
+quantity_usdt = 7  # Montant fixe par position en USDT
 stop_loss_pct = 0.006          # SL initial 0.6%
 take_profit_pct = 0.015        # TP initial 1.5%
 interval = Client.KLINE_INTERVAL_5MINUTE

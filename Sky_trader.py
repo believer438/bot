@@ -348,7 +348,7 @@ def close_position():
         side = SIDE_SELL if current_direction == "bullish" else SIDE_BUY
         price = float(client.get_symbol_ticker(symbol=symbol)["price"])
         qty = current_quantity if current_quantity else calculate_quantity(price)
-        client.futures_create_order(
+        retry_order(lambda: client.futures_create_order(
             symbol=symbol,
             side=side,
             type=ORDER_TYPE_MARKET,

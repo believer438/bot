@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import requests
 import traceback
 import threading
+import platform
 
 # === CHARGEMENT DES VARIABLES D'ENVIRONNEMENT ===
 load_dotenv()
@@ -90,10 +91,13 @@ def get_ema_cross():
 
 # === CALCUL DE LA QUANTITÉ DE L'ORDRE SELON LE PRIX D'ENTRÉE (vérification ajoutée) ===
 def calculate_quantity(entry_price):
-    # Utilise un montant fixe (quantity_usdt) pour calculer la quantité à acheter
     qty = (quantity_usdt * leverage) / entry_price
-    # arrondi à 2 ou 3 décimales selon la paire (ici 2 pour ALGOUSDT)
-    return round(qty, 2)
+    # Pour ALGOUSDT Futures, la quantité doit être arrondie à 1 décimale (ex: 12.3)
+    qty = round(qty, 1)
+    # Vérifie que la quantité est suffisante pour Binance (>= 0.1 pour ALGOUSDT)
+    if qty < 0.1:
+        raise ValueError("Quantité trop petite pour Binance (min 0.1 ALGO)")
+    return qty
 
 # === ENREGISTREMENT DANS LE JOURNAL DES TRADES ===
 def log_trade(direction, entry_price, sl, tp, mode, status="OUVERT"):
@@ -101,7 +105,7 @@ def log_trade(direction, entry_price, sl, tp, mode, status="OUVERT"):
         with open(log_file, mode="a", newline="") as file:
             writer = csv.writer(file)
             writer.writerow([
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 direction.upper(),
                 round(entry_price, 4),
                 round(sl, 4),
@@ -284,23 +288,24 @@ def open_trade(direction):
             print(msg)
             return
 
-        client.futures_create_order(symbol=symbol, side=side, type=ORDER_TYPE_MARKET, quantity=qty)
-        client.futures_create_order(
+        # Utilisation du retry pour chaque ordre (5 tentatives, délai très court)
+        retry_order(lambda: client.futures_create_order(symbol=symbol, side=side, type=ORDER_TYPE_MARKET, quantity=qty))
+        retry_order(lambda: client.futures_create_order(
             symbol=symbol,
             side=SIDE_SELL if direction == "bullish" else SIDE_BUY,
             type=ORDER_TYPE_TAKE_PROFIT_MARKET,
             stopPrice=take_profit,
             closePosition=True,
             timeInForce="GTC"
-        )
-        client.futures_create_order(
+        ))
+        retry_order(lambda: client.futures_create_order(
             symbol=symbol,
             side=SIDE_SELL if direction == "bullish" else SIDE_BUY,
             type=ORDER_TYPE_STOP_MARKET,
             stopPrice=stop_price,
             closePosition=True,
             timeInForce="GTC"
-        )
+        ))
 
         msg = f"✅ POSITION OUVERTE : {direction.upper()} sur {symbol} à {price}$\nTP: {take_profit}$ | SL: {stop_price}$ | Levier: x{leverage}"
         send_telegram(msg)
@@ -348,7 +353,7 @@ def close_position():
             side=side,
             type=ORDER_TYPE_MARKET,
             quantity=qty
-        )
+        ))
         send_telegram(f"⚠ Position fermée avant nouveau croisement à {price}$")
         print(f"Position fermée avant nouveau croisement à {price}$")
 
@@ -444,6 +449,42 @@ def reset_manual_close():
 ORDER_TYPE_TAKE_PROFIT_MARKET = "TAKE_PROFIT_MARKET"
 ORDER_TYPE_STOP_MARKET = "STOP_MARKET"
 ORDER_TYPE_MARKET = "MARKET"
+
+def sync_time():
+    try:
+        if platform.system() == "Windows":
+            os.system("w32tm /resync")
+        elif platform.system() == "Linux":
+            os.system("sudo ntpdate pool.ntp.org")
+        print("⏰ Synchronisation de l'horloge système effectuée.")
+    except Exception as e:
+        print("Erreur lors de la synchronisation de l'heure :", e)
+
+sync_time()
+
+def check_position_open():
+    try:
+        positions = client.futures_position_information(symbol=symbol)
+        for pos in positions:
+            if float(pos['positionAmt']) != 0:
+                return True
+        return False
+    except Exception as e:
+        print("Erreur lors de la vérification de la position :", e)
+        return False
+
+def retry_order(order_function, max_attempts=5, delay=0.2):
+    """
+    Tente d'exécuter order_function jusqu'à max_attempts fois, avec un délai très court entre chaque tentative.
+    """
+    for attempt in range(max_attempts):
+        try:
+            return order_function()
+        except Exception as e:
+            print(f"⚠ Tentative {attempt+1} échouée : {e}")
+            send_telegram(f"⚠ Tentative {attempt+1} échouée : {e}")
+            time.sleep(delay)  # 0.2 seconde entre chaque tentative
+    raise Exception("❌ Toutes les tentatives d'envoi de l'ordre ont échoué.")
 
 if __name__ == "__main__":
     run_bot()

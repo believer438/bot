@@ -194,7 +194,7 @@ def open_trade(direction, quantity=None, leverage=None):
         state.current_quantity = qty
 
         send_telegram(
-            f"✅ Position {'HAUSSE' if direction == 'bullish' else 'BAISSE'} ouverte à {entry_price}$\n"
+            f"✅ Une Position de {'HAUSSE' if direction == 'bullish' else 'BAISSE'} ouverte à {entry_price}$\n"
             f"💰 Montant : {usdt_margin}$ ... Quantité: {qty} ALGO |\n⚙️ Levier: x{lev}\n"
         )
 

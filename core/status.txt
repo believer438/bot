@@ -1,0 +1,1 @@
+ERREUR - HTTPSConnectionPool(host='api.binance.com', port=443): Max retries exceeded with url: /api/v3/klines?interval=5m&limit=2&symbol=ALGOUSDT (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000001B3F90D1990>: Failed to resolve 'api.binance.com' ([Errno 11001] getaddrinfo failed)"))

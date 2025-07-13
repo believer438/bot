@@ -1,0 +1,4 @@
+else:
+    log_error(f"[handle_sl_change] Valeur non prise en charge : {message.text.strip()}")
+    bot.reply_to(message, "Valeur non prise en charge.")
+    ask_user(bot, message.chat.id, "Réponds 1 pour OUI, 2 pour NON.", lambda m: handle_sl_change(m, pos))

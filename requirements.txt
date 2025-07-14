@@ -1,0 +1,10 @@
+python-binance
+ta
+numpy
+python-dotenv
+requests
+pandas
+python-telegram-bot==13.15
+websocket-client
+psutil
+pyTelegramBotAPI

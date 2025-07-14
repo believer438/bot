@@ -255,10 +255,6 @@ def close_position():
         qty = abs(amt)
 
         # Récupère le levier AVANT la fermeture
-        try:
-            lev = int(pos.get("leverage", 1))
-        except (KeyError, ValueError):
-            lev = "inconnu"
 
         # Fermeture de la position
         try:
@@ -281,7 +277,16 @@ def close_position():
             send_telegram(f"❌ Erreur inconnue : {e}")
             log_error(e)
             return
-
+        # ...avant send_telegram...
+        try:
+            account_info = client.futures_account()
+            lev = "inconnu"
+            for asset in account_info['positions']:
+                if asset['symbol'] == symbol:
+                    lev = int(asset.get('leverage', 1))
+                    break
+        except Exception:
+            lev = "inconnu"
         # Utilise le levier récupéré AVANT la fermeture
         entry_price = float(pos['entryPrice'])
         exit_price = float(pos['markPrice'])
@@ -291,7 +296,7 @@ def close_position():
         send_telegram(
             f"✅ La Position {sens} fermée à {exit_price:.4f}$\n"
             f"💵 Quantité: {qty:.2f} | Prix d'Entrée: {entry_price:.4f}$\n"
-            f"⚙️ Levier de : x{lev}\n"
+            f"⚙️ Levier de : x{lev}"
             f".... 💰Montant : {position_value:.2f} USDT\n"
             f"{'🟢 Gain' if gain >= 0 else '🔴 Perte'} : {gain:.2f} USDT ... ✅"
         )

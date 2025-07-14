@@ -259,7 +259,7 @@ def handle_main_keyboard(message):
     if message.text == "📊 Statut":
         status(message)
     elif message.text == "📈 Trader":
-        send_position_menu(message)  # Ouvre le menu position
+        send_position_menu(message)
     elif message.text == "🔄 Mode AUTO":
         bot.send_message(message.chat.id, "Mode AUTO activé.")
         # Tu peux aussi changer le mode ici
@@ -316,14 +316,20 @@ def handle_all_callbacks(call):
             bot.send_message(chat_id, "🔴 Fermeture de la position en cours ...")
         
         elif data == "mode_auto":
-            with open("mode.txt", "w") as f:
-                f.write("auto")
-            bot.send_message(chat_id, "✅ Mode AUTO activé.")
-        
+            try:
+                with open("mode.txt", "w") as f:
+                    f.write("auto")
+                bot.send_message(chat_id, "✅ Mode AUTO activé.")
+            except Exception as e:
+                bot.send_message(chat_id, f"❌ Erreur écriture mode.txt : {e}")
+
         elif data == "mode_alert":
-            with open("mode.txt", "w") as f:
-                f.write("alert")
-            bot.send_message(chat_id, "✅ Mode ALERT activé.")
+            try:
+                with open("mode.txt", "w") as f:
+                    f.write("alert")
+                bot.send_message(chat_id, "✅ Mode ALERT activé.")
+            except Exception as e:
+                bot.send_message(chat_id, f"❌ Erreur écriture mode.txt : {e}")
         
         elif data == "gain_alert":
             current = read_gain_alert()

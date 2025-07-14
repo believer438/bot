@@ -12243,3 +12243,13 @@ Traceback (most recent call last):
     raise ReadTimeout(e, request=request)
 requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.telegram.org', port=443): Read timed out. (read timeout=20)
 
+2025-07-14 15:31:14,666 [INFO] Websocket connected
+2025-07-14 15:31:23,253 [INFO] Websocket connected
+2025-07-14 15:33:14,303 [ERROR] [handle_sl_change] Valeur non prise en charge : \U0001f4c8 Trader
+2025-07-14 17:21:46,536 [INFO] Websocket connected
+2025-07-14 17:21:46,567 [INFO] Websocket connected
+2025-07-14 17:23:50,337 [ERROR] [handle_sl_change] Valeur non prise en charge : \U0001f4ca Statut
+2025-07-14 17:23:59,111 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut
+2025-07-14 17:24:05,670 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut
+2025-07-14 17:24:15,256 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut
+2025-07-14 17:25:55,123 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut

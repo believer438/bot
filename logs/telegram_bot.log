@@ -12253,3 +12253,12 @@ requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.telegram.org', po
 2025-07-14 17:24:05,670 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut
 2025-07-14 17:24:15,256 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut
 2025-07-14 17:25:55,123 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut
+2025-07-14 17:32:29,806 [INFO] Websocket connected
+2025-07-14 17:32:29,823 [INFO] Websocket connected
+2025-07-14 17:45:30,547 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut
+2025-07-14 17:45:30,547 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut
+2025-07-14 17:53:47,278 [INFO] Websocket connected
+2025-07-14 17:53:47,479 [INFO] Websocket connected
+2025-07-14 17:53:55,793 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut
+2025-07-14 17:54:00,525 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut
+2025-07-14 17:58:31,602 [INFO] Websocket connected

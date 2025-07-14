@@ -262,10 +262,12 @@ def handle_main_keyboard(message):
         send_position_menu(message)
     elif message.text == "🔄 Mode AUTO":
         bot.send_message(message.chat.id, "Mode AUTO activé.")
-        # Tu peux aussi changer le mode ici
+        with open("mode.txt", "w") as f:
+            f.write("auto")
     elif message.text == "🔔 Mode ALERT":
         bot.send_message(message.chat.id, "Mode ALERT activé.")
-        # Tu peux aussi changer le mode ici
+        with open("mode.txt", "w") as f:
+            f.write("alert")
     elif message.text == "💰 Alertes de gains":
         toggle_gain_alert(message)
     elif message.text == "❓ Aide":

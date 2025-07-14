@@ -94,23 +94,6 @@ def execute_ema_cross_strategy():
         if can_send_telegram():
             send_telegram(f"❌ Erreur execute_ema_cross_strategy : {e}")
 
-# === BOUCLE CLASSIQUE À COMMENTER ===
-
-# def ema_strategy_loop():
-#     t = threading.current_thread()
-#     while getattr(t, "do_run", True):
-#         try:
-#             execute_ema_cross_strategy()
-#         except Exception as e:
-#             print(f"❌ Erreur dans la boucle EMA strategy : {e}")
-#         time.sleep(1)  # Passe de 10 à 1 seconde
-
-# def start_ema_strategy_thread():
-#     thread = threading.Thread(target=ema_strategy_loop, daemon=True)
-#     thread.do_run = True
-#     thread.start()
-#     return thread
-
 def trade_on_external_signal(direction: str, source: str = "multi-tf"):
     global _last_signal
     with _last_signal_lock:

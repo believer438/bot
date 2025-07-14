@@ -12131,3 +12131,115 @@ requests.exceptions.ConnectionError: HTTPSConnectionPool(host='api.telegram.org'
 2025-07-13 02:26:27,925 [INFO] Websocket connected
 2025-07-13 02:27:02,236 [INFO] [START] Commande reçue de 6465949368 : /start
 2025-07-13 02:27:53,182 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 13:39:10,852 [INFO] Websocket connected
+2025-07-14 13:39:10,899 [INFO] Websocket connected
+2025-07-14 13:39:27,600 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 13:40:32,606 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 13:41:51,892 [ERROR] [set_new_sl] Erreur : could not convert string to float: '/start'
+Traceback (most recent call last):
+  File "D:\admin\MES PROJETS\Bot de trading\core\telegram_controller.py", line 572, in set_new_sl
+    percent = float(percent_str)
+ValueError: could not convert string to float: '/start'
+
+2025-07-14 13:41:57,662 [ERROR] [set_new_sl] Erreur : could not convert string to float: '/start'
+Traceback (most recent call last):
+  File "D:\admin\MES PROJETS\Bot de trading\core\telegram_controller.py", line 572, in set_new_sl
+    percent = float(percent_str)
+ValueError: could not convert string to float: '/start'
+
+2025-07-14 13:44:55,125 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 14:03:22,575 [INFO] Websocket connected
+2025-07-14 14:03:22,624 [INFO] Websocket connected
+2025-07-14 14:03:25,735 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 14:03:40,784 [INFO] [STATUS] Commande reçue de 6465949368 : \U0001f4ca Statut
+2025-07-14 14:03:57,145 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 14:15:36,310 [INFO] Websocket connected
+2025-07-14 14:15:36,359 [INFO] Websocket connected
+2025-07-14 14:15:36,561 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 14:15:43,560 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 14:16:38,835 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 14:21:45,628 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 14:22:34,336 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 14:35:24,444 [INFO] Websocket connected
+2025-07-14 14:35:24,462 [INFO] Websocket connected
+2025-07-14 14:35:29,485 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 14:36:18,345 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 14:37:42,473 [ERROR] [handle_sl_change] Valeur non prise en charge : \U0001f4c8 Trader
+2025-07-14 14:37:42,481 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 14:37:42,789 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 15:01:43,524 [INFO] Websocket connected
+2025-07-14 15:01:43,524 [INFO] Websocket connected
+2025-07-14 15:01:48,865 [INFO] [START] Commande reçue de 6465949368 : /start
+2025-07-14 15:03:15,217 [ERROR] [handle_sl_change] Valeur non prise en charge : \U0001fa99 Levier & Solde
+2025-07-14 15:03:19,328 [ERROR] [handle_sl_change] Valeur non prise en charge : \U0001fa99 Levier & Solde
+2025-07-14 15:10:47,965 [ERROR] Infinity polling exception: HTTPSConnectionPool(host='api.telegram.org', port=443): Read timed out. (read timeout=20)
+2025-07-14 15:10:47,970 [ERROR] Exception traceback:
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\urllib3\connection.py", line 516, in getresponse
+    httplib_response = super().getresponse()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\http\client.py", line 1374, in getresponse
+    response.begin()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\http\client.py", line 318, in begin
+    version, status, reason = self._read_status()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\http\client.py", line 279, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\socket.py", line 705, in readinto
+    return self._sock.recv_into(b)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\ssl.py", line 1274, in recv_into
+    return self.read(nbytes, buffer)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\ssl.py", line 1130, in read
+    return self._sslobj.read(len, buffer)
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\requests\adapters.py", line 667, in send
+    resp = conn.urlopen(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\urllib3\util\retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\urllib3\connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\urllib3\connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='api.telegram.org', port=443): Read timed out. (read timeout=20)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 1110, in infinity_polling
+    self.polling(non_stop=True, timeout=timeout, long_polling_timeout=long_polling_timeout,
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 1198, in polling
+    self.__threaded_polling(non_stop=non_stop, interval=interval, timeout=timeout, long_polling_timeout=long_polling_timeout,
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 1273, in __threaded_polling
+    raise e
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 1234, in __threaded_polling
+    polling_thread.raise_exceptions()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\util.py", line 111, in raise_exceptions
+    raise self.exception_info
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\util.py", line 93, in run
+    task(*args, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 688, in __retrieve_updates
+    updates = self.get_updates(offset=(self.last_update_id + 1),
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\__init__.py", line 660, in get_updates
+    json_updates = apihelper.get_updates(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\apihelper.py", line 332, in get_updates
+    return _make_request(token, method_url, params=payload)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\telebot\apihelper.py", line 162, in _make_request
+    result = _get_req_session().request(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\requests\sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\requests\sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python310\lib\site-packages\requests\adapters.py", line 713, in send
+    raise ReadTimeout(e, request=request)
+requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.telegram.org', port=443): Read timed out. (read timeout=20)
+

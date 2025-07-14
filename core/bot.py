@@ -89,16 +89,28 @@ def auto_set_sl_tp(stop_event):
         try:
             positions = client.futures_position_information(symbol=symbol)
             position_handled = False
+
             for pos in positions:
                 amt = float(pos['positionAmt'])
+
                 if amt != 0 and not position_handled:
                     position_handled = True
+
                     try:
-                        current_leverage = int(pos['leverage'])
+                        # Récupération fiable du levier via futures_account()
+                        account_info = client.futures_account()
+                        current_leverage = default_leverage
+                        for asset in account_info['positions']:
+                            if asset['symbol'] == symbol:
+                                current_leverage = int(asset.get('leverage', default_leverage))
+                                break
+
+                        # Application du levier
                         client.futures_change_leverage(symbol=symbol, leverage=current_leverage)
-                        print(f"🔧 Levier appliqué (depuis position existante) : {current_leverage}x")
+
                     except Exception as e:
                         print(f"⚠️ Erreur application du levier : {e}")
+                        send_telegram(f"⚠️ Erreur application du levier : {e}")
 
                     # ⬇️ Mise à jour des infos dans le state
                     state.position_open = True
@@ -164,8 +176,10 @@ def auto_set_sl_tp(stop_event):
             time.sleep(3)
 
         except Exception as e:
-            print("Erreur auto_set_sl_tp :", e)
-            time.sleep(3)
+            print(f"❌ Erreur dans auto_set_sl_tp : {e}")
+            send_telegram(f"❌ Erreur dans auto_set_sl_tp : {e}")
+
+        time.sleep(3)
 
 def should_stop():
     stop_path = os.path.join(BASE_DIR, "stop.txt")

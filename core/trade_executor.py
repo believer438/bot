@@ -194,7 +194,7 @@ def open_trade(direction, quantity=None, leverage=None):
         state.current_quantity = qty
 
         send_telegram(
-            f"✅ Une Position de {'HAUSSE' if direction == 'bullish' else 'BAISSE'} ouverte à {entry_price}$\n"
+            f"✅Position de {'HAUSSE' if direction == 'bullish' else 'BAISSE'} ouverte à {entry_price}$\n"
             f"💰 Montant : {usdt_margin}$ ... Quantité: {qty} ALGO |\n⚙️ Levier: x{lev}\n"
         )
 
@@ -254,6 +254,12 @@ def close_position():
         side = "SELL" if amt > 0 else "BUY"
         qty = abs(amt)
 
+        # Récupère le levier AVANT la fermeture
+        try:
+            lev = int(pos.get("leverage", 1))
+        except (KeyError, ValueError):
+            lev = "inconnu"
+
         # Fermeture de la position
         try:
             client.futures_create_order(
@@ -275,22 +281,19 @@ def close_position():
             send_telegram(f"❌ Erreur inconnue : {e}")
             log_error(e)
             return
-        
-        position_info = client.futures_position_information(symbol=symbol)
-        qty = abs(float(pos['positionAmt']))
+
+        # Utilise le levier récupéré AVANT la fermeture
         entry_price = float(pos['entryPrice'])
         exit_price = float(pos['markPrice'])
-        position_info = client.futures_position_information(symbol=symbol)
-        try:
-            lev = int(pos.get("leverage", 1))
-        except (KeyError, ValueError):
-            lev = "inconnu"
         position_value = qty * entry_price
         sens = "HAUSSE" if state.current_direction == "bullish" else "BAISSE"
+        gain = (exit_price - entry_price) * qty if sens == "HAUSSE" else (entry_price - exit_price) * qty
         send_telegram(
             f"✅ La Position {sens} fermée à {exit_price:.4f}$\n"
-            f"Quantité: {qty:.2f} | Prix d'Entrée: {entry_price:.4f}$\nLevier: x{lev}"
-            f"... 💰 Montant : {position_value:.2f} USDT"
+            f"💵 Quantité: {qty:.2f} | Prix d'Entrée: {entry_price:.4f}$\n"
+            f"⚙️ Levier de : x{lev}\n"
+            f".... 💰Montant : {position_value:.2f} USDT\n"
+            f"{'🟢 Gain' if gain >= 0 else '🔴 Perte'} : {gain:.2f} USDT ... ✅"
         )
 
 
@@ -301,7 +304,7 @@ def close_position():
         state.reset_all()
 
         # Vérification de clôture effective
-        time.sleep(1)
+        #time.sleep(1)
         if check_position_open(symbol=symbol):
             send_telegram("⚠️ La position semble toujours ouverte après la clôture. Vérifie manuellement.")
 

@@ -54,7 +54,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import telebot
 from dotenv import load_dotenv
 from core.state import state
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from types import SimpleNamespace
 from core.utils import safe_round
 from core.notifier import send_telegram
@@ -184,7 +184,7 @@ def close(message):
     log_info(f"[CLOSE] Commande reçue de {message.chat.id} : {message.text}")
     with open("manual_close_request.txt", "w") as f:
         f.write("close")
-    bot.reply_to(message, "🔴 Fermeture de la position en cours ...")
+    bot.send_message(message.chat.id, "🔴 Fermeture de la position en cours ...")
 
 # === SHUTDOWN ===
 # Permet d'arrêter le bot manuellement via Telegram
@@ -232,119 +232,75 @@ def help(message):
     bot.reply_to(message, help_msg)
 
 # === MENU ===
+def send_main_reply_keyboard(chat_id):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.row(KeyboardButton("📊 Statut"), KeyboardButton("📈 Trader"))
+    markup.row(KeyboardButton("🔄 Mode AUTO"), KeyboardButton("🔔 Mode ALERT"))
+    markup.row(KeyboardButton("💰 Alertes de gains"), KeyboardButton("❓ Aide"))
+    markup.row(KeyboardButton("🪙 Levier & Solde"), KeyboardButton("📚 Plus ➡️"))
+    bot.send_message(chat_id, "📋 Menu principal :", reply_markup=markup)
+
+def send_leverage_reply_keyboard(chat_id):
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.row(KeyboardButton("🪙 Levier"), KeyboardButton("💵 Quantity"))
+    markup.row(KeyboardButton("⬅️ Retour"))
+    bot.send_message(chat_id, "⚙️ Paramètres :", reply_markup=markup)
+
 @bot.message_handler(commands=['start'])
 def start(message):
     log_info(f"[START] Commande reçue de {message.chat.id} : {message.text}")
-    send_main_menu(message)
+    send_main_reply_keyboard(message.chat.id)
 
-@bot.message_handler(commands=['menu'])
-def menu(message):
-    log_info(f"[MENU] Commande reçue de {message.chat.id} : {message.text}")
-    send_main_menu(message)
+@bot.message_handler(func=lambda m: m.text in [
+    "📊 Statut", "📈 Trader", "🔄 Mode AUTO", "🔔 Mode ALERT",
+    "💰 Alertes de gains", "❓ Aide", "🪙 Levier & Solde", "📚 Plus ➡️"
+])
+def handle_main_keyboard(message):
+    if message.text == "📊 Statut":
+        status(message)
+    elif message.text == "📈 Trader":
+        send_position_menu(message)  # Ouvre le menu position
+    elif message.text == "🔄 Mode AUTO":
+        bot.send_message(message.chat.id, "Mode AUTO activé.")
+        # Tu peux aussi changer le mode ici
+    elif message.text == "🔔 Mode ALERT":
+        bot.send_message(message.chat.id, "Mode ALERT activé.")
+        # Tu peux aussi changer le mode ici
+    elif message.text == "💰 Alertes de gains":
+        toggle_gain_alert(message)
+    elif message.text == "❓ Aide":
+        help(message)
+    elif message.text == "🪙 Levier & Solde":
+        send_leverage_menu(message)  # Ouvre le menu levier
+    elif message.text == "📚 Plus ➡️":
+        send_more_menu(message)      # Ouvre le menu plus
+    elif message.text == "⬅️ Retour":
+        send_main_reply_keyboard(message.chat.id)
 
-def send_main_menu(message=None, call=None):
-    markup = InlineKeyboardMarkup(row_width=2)
-    markup.add(
-        InlineKeyboardButton("📊 Statut", callback_data="status"),
-        InlineKeyboardButton("📈 trader...", callback_data="position_menu"),
-        InlineKeyboardButton("🔄 Mode AUTO", callback_data="mode_auto"),
-        InlineKeyboardButton("🔔 Mode ALERT", callback_data="mode_alert"),
-        InlineKeyboardButton("💰 Alertes de gains", callback_data="gain_alert"),
-        InlineKeyboardButton("❓ Aide", callback_data="help"),
-        InlineKeyboardButton("Levier & Solde à prendre", callback_data="leverage_menu"),
-        InlineKeyboardButton("Plus ➡️", callback_data="more")
-    )
-    if call:
-        try:
-            bot.edit_message_text(
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
-                text="📋 Menu principal :",
-                reply_markup=markup
-            )
-        except telebot.apihelper.ApiTelegramException as e:
-            if "message is not modified" in str(e):
-                print("🔁 Message identique, modification ignorée.")
-            else:
-                raise e
-    elif message:
-        bot.send_message(message.chat.id, "📋 Menu principal :", reply_markup=markup)
-
-def send_more_menu(message=None, call=None):
-    markup = InlineKeyboardMarkup(row_width=2)
-    markup.add(
-        InlineKeyboardButton("📈 Position", callback_data="position"),
-        InlineKeyboardButton("💵 Solde (USD)", callback_data="balance"),
-        InlineKeyboardButton("🎯 Take Profit", callback_data="take_profit"),
-        InlineKeyboardButton("🛡 Stop Loss", callback_data="stop_loss"),
-        InlineKeyboardButton("⬅️ Retour", callback_data="back_main")
-    )
-    if call:
-        bot.edit_message_text(
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            text="🔎 Menu avancé :",
-            reply_markup=markup
-        )
-    elif message:
-        bot.send_message(message.chat.id, "🔎 Menu avancé :", reply_markup=markup)
-
-# Nouveau sous-menu pour Levier & Quantity
-def send_leverage_menu(message=None, call=None):
-    markup = InlineKeyboardMarkup(row_width=2)
-    markup.add(
-        InlineKeyboardButton("🪙 Levier", callback_data="set_leverage"),
-        InlineKeyboardButton("💵 Quantity", callback_data="set_quantity"),
-        InlineKeyboardButton("⬅️ Retour", callback_data="back_main")
-    )
-    if call:
-        bot.edit_message_text(
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            text="⚙️ Paramètres :",
-            reply_markup=markup
-        )
-    elif message:
-        bot.send_message(message.chat.id, "⚙️ Paramètres :", reply_markup=markup)
-
-def send_position_menu(message=None, call=None):
-    markup = InlineKeyboardMarkup(row_width=2)
-    # Première ligne : ouverture haussière et baissière
-    markup.add(
-        InlineKeyboardButton("📈 hausse", callback_data="open_bullish"),
-        InlineKeyboardButton("📉 baisse", callback_data="open_bearish")
-    )
-    # Deuxième ligne : retour et fermer la position
-    markup.add(
-        InlineKeyboardButton("⬅️ Retour", callback_data="back_main"),
-        InlineKeyboardButton("❌ Fermer", callback_data="close")
-    )
-    if call:
-        bot.edit_message_text(
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            text="📈 Menu position :",
-            reply_markup=markup
-        )
-    elif message:
-        bot.send_message(message.chat.id, "📈 trader  :", reply_markup=markup)
+@bot.message_handler(func=lambda m: m.text in ["🪙 Levier", "💵 Quantity"])
+def handle_leverage_keyboard(message):
+    if message.text == "🪙 Levier":
+        bot.send_message(message.chat.id, "Envoie-moi le nouveau levier :")
+        bot.register_next_step_handler(message, save_leverage)
+    elif message.text == "💵 Quantity":
+        bot.send_message(message.chat.id, "Envoie-moi la nouvelle quantité en USDT :")
+        bot.register_next_step_handler(message, save_quantity)
 
 @bot.callback_query_handler(func=lambda call: True)
 def handle_all_callbacks(call):
     data = call.data
     chat_id = call.message.chat.id
-    
+
     try:
         bot.answer_callback_query(call.id)
     except telebot.apihelper.ApiTelegramException as e:
         if "query is too old" in str(e):
             print("⏱️ Bouton expiré")
-            bot.send_message(call.message.chat.id, "⏱️ Ce bouton a expiré. Veuillez réessayer.")
+            bot.send_message(chat_id, "⏱️ Ce bouton a expiré. Veuillez réessayer.")
         else:
             raise
 
     try:
-        # === Navigation des menus ===
         if data == "status":
             log_info(f"[CALLBACK] Bouton 'status' cliqué par {chat_id}")
             try:
@@ -357,7 +313,7 @@ def handle_all_callbacks(call):
         elif data == "close":
             with open("manual_close_request.txt", "w") as f:
                 f.write("close")
-        #    bot.send_message(chat_id, "🔴 fermeture en cours ...")
+            bot.send_message(chat_id, "🔴 Fermeture de la position en cours ...")
         
         elif data == "mode_auto":
             with open("mode.txt", "w") as f:
@@ -388,7 +344,7 @@ def handle_all_callbacks(call):
             bot.send_message(chat_id, help_msg)
 
         elif data == "leverage_menu":
-            send_leverage_menu(call=call)
+            send_leverage_menu(call)
         elif data == "set_leverage":
             bot.send_message(chat_id, "Envoie-moi le nouveau levier :")
             bot.register_next_step_handler_by_chat_id(chat_id, save_leverage)
@@ -397,11 +353,11 @@ def handle_all_callbacks(call):
             bot.register_next_step_handler(call.message, save_quantity)
 
         elif data == "more":
-            send_more_menu(call=call)
+            send_more_menu(call)
         elif data == "back_main":
-            send_main_menu(call=call)
+            send_main_reply_keyboard(chat_id)
         elif data == "position_menu":
-            send_position_menu(call=call)
+            send_position_menu(call)
 
         # === Traitement des actions spéciales ===
         elif data in ["open_bullish", "open_bearish"]:
@@ -426,6 +382,47 @@ def handle_all_callbacks(call):
         error_msg = f"❌ Erreur callback : {e}\n{traceback.format_exc()}"
         log_error(error_msg)
         bot.send_message(chat_id, f"❌ Erreur callback : {e}")
+
+# Place la fonction ici, en dehors du handler
+def send_leverage_menu(obj):
+    chat_id = obj.chat.id if hasattr(obj, 'chat') else obj.message.chat.id
+    markup = InlineKeyboardMarkup(row_width=2)
+    markup.row(
+        InlineKeyboardButton("🪙 Levier", callback_data="set_leverage"),
+        InlineKeyboardButton("💵 Quantité", callback_data="set_quantity")
+    )
+    markup.row(
+        InlineKeyboardButton("⬅️ Retour", callback_data="back_main")
+    )
+    bot.send_message(chat_id, "⚙️ Parametre :", reply_markup=markup)
+
+def send_more_menu(obj):
+    chat_id = obj.chat.id if hasattr(obj, 'chat') else obj.message.chat.id
+    markup = InlineKeyboardMarkup(row_width=2)
+    markup.row(
+        InlineKeyboardButton("📈 Position", callback_data="position"),
+        InlineKeyboardButton("💵 Balance", callback_data="balance")
+    )
+    markup.row(
+        InlineKeyboardButton("🎯 Take Profit", callback_data="take_profit"),
+        InlineKeyboardButton("🛡️ Stop Loss", callback_data="stop_loss")
+    )
+    markup.row(
+        InlineKeyboardButton("⬅️ Retour", callback_data="back_main")
+    )
+    bot.send_message(chat_id, "📚 Menu Plus :", reply_markup=markup)
+def send_position_menu(obj):
+    chat_id = obj.chat.id if hasattr(obj, 'chat') else obj.message.chat.id
+    markup = InlineKeyboardMarkup(row_width=2)
+    markup.row(
+        InlineKeyboardButton("📈 P/ HAUSSE", callback_data="open_bullish"),
+        InlineKeyboardButton("📉 P/ BAISSE", callback_data="open_bearish")
+    )
+    markup.row(
+        InlineKeyboardButton("❌ CLOSE P/ ", callback_data="close"),
+        InlineKeyboardButton("⬅️ Retour", callback_data="back_main")
+    )
+    bot.send_message(chat_id, "📈 Menu Position :", reply_markup=markup)
 # === Fonctions pour gérer les positions ===
 def send_current_position(chat_id):
     from core.utils import safe_round, safe_float
@@ -449,11 +446,16 @@ def send_current_position(chat_id):
             pnl = safe_float(pos["unRealizedProfit"])
             pnl_str = f"{'🟢 Gain' if pnl >= 0 else '🔴 Perte'} : {safe_round(pnl)} $"
             # 🔍 Récupère l’effet de levier réellement appliqué à la position
-            position_info = client.futures_position_information(symbol=symbol)
             try:
-                lev = int(pos["leverage"])
-            except (KeyError, ValueError):
+                account_info = client.futures_account()
                 lev = "inconnu"
+                for asset in account_info['positions']:
+                    if asset['symbol'] == symbol:
+                        lev = int(asset.get('leverage', "inconnu"))
+                        break
+            except Exception:
+                lev = "inconnu"
+
             montant_investi = safe_round(qty * entry)
             msg = (
                 f"📈 Position ouverte :\n"
@@ -707,10 +709,6 @@ def receive_leverage(message):
     try:
         # On passe directement le montant USDT et levier à open_trade
         open_trade(direction, quantity=capital, leverage=leverage)
-
-        # Optionnel : confirmer à l'utilisateur que la requête est bien prise en compte
-        bot.send_message(chat_id, f"⌛️ Ouverture position {direction} avec {capital} USDT et levier x{leverage} en cours...")
-
     except Exception as e:
         bot.send_message(chat_id, f"❌ Erreur ouverture position : {e}")
 

@@ -304,13 +304,13 @@ def handle_all_callbacks(call):
 
     try:
         if data == "status":
-            log_info(f"[CALLBACK] Bouton 'status' cliqué par {chat_id}")
+            log_info(f"[CALLBACK] Bouton 'status' cliqué ")
             try:
                 with open("mode.txt", "r") as f:
                     mode_value = f.read().strip()
             except Exception:
                 mode_value = "inconnu"
-            bot.send_message(chat_id, f"✅ SKY_TRAsDER actif en mode {mode_value.upper()}")
+            bot.send_message(chat_id, f"✅ SKY_TRADER actif en mode {mode_value.upper()}")
 
         elif data == "close":
             with open("manual_close_request.txt", "w") as f:

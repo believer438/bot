@@ -58,6 +58,7 @@ def get_mode() -> str:
         send_telegram(f"⚠️ Erreur get_mode() : {e}\n{err}")
         return "auto"
 
+
 def get_leverage_from_file(filepath=leverage_file, default_leverage=10) -> int:
     """
     Lit le levier dans leverage.txt.

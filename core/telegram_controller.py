@@ -1,7 +1,7 @@
 import os
 import sys
 import psutil
-from core.config import BASE_DIR, symbol # Utilise BASE_DIR depuis config.py
+from core.config import BASE_DIR, symbol, default_leverage, default_quantity_usdt # Utilise BASE_DIR depuis config.py
 
 lock_file = os.path.join(BASE_DIR, "bot.lock")
 
@@ -310,7 +310,7 @@ def handle_all_callbacks(call):
                     mode_value = f.read().strip()
             except Exception:
                 mode_value = "inconnu"
-            bot.send_message(chat_id, f"✅ Sky_trader_bot actif en mode {mode_value.upper()}")
+            bot.send_message(chat_id, f"✅ SKY_TRADER actif en mode {mode_value.upper()}")
 
         elif data == "close":
             with open("manual_close_request.txt", "w") as f:
@@ -423,11 +423,11 @@ def send_position_menu(obj):
     chat_id = obj.chat.id if hasattr(obj, 'chat') else obj.message.chat.id
     markup = InlineKeyboardMarkup(row_width=2)
     markup.row(
-        InlineKeyboardButton("📈 P/ HAUSSE", callback_data="open_bullish"),
-        InlineKeyboardButton("📉 P/ BAISSE", callback_data="open_bearish")
+        InlineKeyboardButton("📈 P... HAUSSE", callback_data="open_bullish"),
+        InlineKeyboardButton("📉 P... BAISSE", callback_data="open_bearish")
     )
     markup.row(
-        InlineKeyboardButton("❌ CLOSE P/ ", callback_data="close"),
+        InlineKeyboardButton("❌ CLOSE P... ", callback_data="close"),
         InlineKeyboardButton("⬅️ Retour", callback_data="back_main")
     )
     bot.send_message(chat_id, "📈 Menu Position :", reply_markup=markup)
@@ -639,7 +639,7 @@ def read_quantity():
         with open("quantity.txt", "r") as f:
             return float(f.read().strip())
     except Exception:
-        return 1.0  # valeur par défaut
+        return default_quantity_usdt  # valeur par défaut
 
 # Fonction pour lire le levier
 def read_leverage():
@@ -647,7 +647,7 @@ def read_leverage():
         with open("leverage.txt", "r") as f:
             return int(f.read().strip())
     except Exception:
-        return 10  # valeur par défaut
+        return default_leverage  # valeur par défaut
 
 user_trade_context = {}  # stocke le contexte par chat_id
 

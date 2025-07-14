@@ -310,7 +310,7 @@ def handle_all_callbacks(call):
                     mode_value = f.read().strip()
             except Exception:
                 mode_value = "inconnu"
-            bot.send_message(chat_id, f"✅ SKY_TRADER actif en mode {mode_value.upper()}")
+            bot.send_message(chat_id, f"✅ SKY_TRAsDER actif en mode {mode_value.upper()}")
 
         elif data == "close":
             with open("manual_close_request.txt", "w") as f:

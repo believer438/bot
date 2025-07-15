@@ -515,16 +515,6 @@ def send_take_profit(chat_id):
 def send_stop_loss(chat_id):
     from core.binance_client import client
     from core.utils import safe_float
-    # ...imports...
-    text = message.text.strip()
-    main_buttons = [
-        "📊 Statut", "📈 Trader", "🔄 Mode AUTO", "🔔 Mode ALERT",
-        "💰 Alertes de gains", "❓ Aide", "🪙 Levier & Solde", "📚 Plus ➡️"
-    ]
-    if text in main_buttons:
-        handle_main_keyboard(message)
-        return
-
     try:
         positions = client.futures_position_information(symbol=SYMBOL)
         pos = next((p for p in positions if float(p["positionAmt"]) != 0), None)
@@ -560,6 +550,17 @@ def send_stop_loss(chat_id):
         bot.send_message(chat_id, f"Erreur récupération Stop Loss : {e}")
 
 def handle_sl_change(message, pos):
+    text = message.text.strip()
+    main_buttons = [
+        "📊 Statut", "📈 Trader", "🔄 Mode AUTO", "🔔 Mode ALERT",
+        "💰 Alertes de gains", "❓ Aide", "🪙 Levier & Solde", "📚 Plus ➡️"
+    ]
+    # Si l'utilisateur clique sur un bouton du menu principal
+    if text in main_buttons:
+        handle_main_keyboard(message)
+        return
+    
+    # Si l'utilisateur répond "1" ou "2"
     if message.text.strip() == "1":
         entry = float(pos["entryPrice"])
         mark = float(pos["markPrice"])
@@ -694,13 +695,12 @@ def handle_trade_callbacks(call):
 def receive_quantity(message):
     chat_id = message.chat.id
     text = message.text.strip()
-    # Liste des boutons à intercepter
     main_buttons = [
         "📊 Statut", "📈 Trader", "🔄 Mode AUTO", "🔔 Mode ALERT",
         "💰 Alertes de gains", "❓ Aide", "🪙 Levier & Solde", "📚 Plus ➡️"
     ]
+    # Ajoute cette vérification !
     if text in main_buttons:
-        # Appelle directement l'action du bouton
         handle_main_keyboard(message)
         return
     try:

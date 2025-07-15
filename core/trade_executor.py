@@ -320,10 +320,27 @@ def close_position():
 # === POSE SL/TP DE SÉCURITÉ SI ABSENT ===
 def set_initial_sl_tp(direction, entry_price, qty):
     """
-    Pose un SL et un TP si aucun n'est présent.
+    Pose un SL et un TP si aucun n'est présent, avec précision maximale.
     """
     try:
         side_close = "SELL" if direction == "bullish" else "BUY"
+        time.sleep(15)  # Attente pour s'assurer que la position est bien ouverte
+
+        # Récupère le prix d'entrée réel depuis Binance
+        positions = client.futures_position_information(symbol=symbol)
+        pos = next((p for p in positions if float(p["positionAmt"]) != 0), None)
+        if pos:
+            entry_price_real = float(pos["entryPrice"])
+        else:
+            entry_price_real = entry_price  # fallback si non dispo
+
+        # Récupère la précision du tickSize
+        exchange_info = client.futures_exchange_info()
+        symbol_info = next(s for s in exchange_info['symbols'] if s['symbol'] == symbol)
+        tick_size = float(next(f for f in symbol_info['filters'] if f['filterType'] == 'PRICE_FILTER')['tickSize'])
+        def round_to_tick(price, tick_size):
+            return round(round(price / tick_size) * tick_size, 8)
+
         orders = client.futures_get_open_orders(symbol=symbol)
         sl_orders = [o for o in orders if o['type'] == "STOP_MARKET" and o['side'] == side_close and o.get('closePosition', False)]
         tp_orders = [o for o in orders if o['type'] == "TAKE_PROFIT_MARKET" and o['side'] == side_close and o.get('closePosition', False)]
@@ -331,30 +348,33 @@ def set_initial_sl_tp(direction, entry_price, qty):
         has_sl = len(sl_orders) > 0
         has_tp = len(tp_orders) > 0
 
-        stop_price = entry_price * (1 - stop_loss_pct) if direction == "bullish" else entry_price * (1 + stop_loss_pct)
-        take_profit = entry_price * (1 + take_profit_pct) if direction == "bullish" else entry_price * (1 - take_profit_pct)
+        stop_price = entry_price_real * (1 - stop_loss_pct) if direction == "bullish" else entry_price_real * (1 + stop_loss_pct)
+        take_profit = entry_price_real * (1 + take_profit_pct) if direction == "bullish" else entry_price_real * (1 - take_profit_pct)
+
+        stop_price = round_to_tick(stop_price, tick_size)
+        take_profit = round_to_tick(take_profit, tick_size)
 
         if not has_sl:
             retry_order(lambda: client.futures_create_order(
                 symbol=symbol,
                 side=side_close,
                 type="STOP_MARKET",
-                stopPrice=round(stop_price, 4),
+                stopPrice=stop_price,
                 closePosition=True,
                 timeInForce="GTC"
             ))
-            send_telegram(f"🛡 Stop loss automatique à {round(stop_price, 4)}$")
+            send_telegram(f"🛡 Stop loss automatique à {stop_price}$")
 
         if not has_tp:
             retry_order(lambda: client.futures_create_order(
                 symbol=symbol,
                 side=side_close,
                 type="TAKE_PROFIT_MARKET",
-                stopPrice=round(take_profit, 4),
+                stopPrice=take_profit,
                 closePosition=True,
                 timeInForce="GTC"
             ))
-            send_telegram(f"🎯 Take profit automatique à {round(take_profit, 4)}$")
+            send_telegram(f"🎯 Take profit automatique à {take_profit}$")
 
         # Vérification création SL/TP
         orders = client.futures_get_open_orders(symbol=symbol)

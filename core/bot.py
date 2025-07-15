@@ -3,7 +3,7 @@ import time
 import threading
 import traceback
 from binance.client import Client
-from strategies.ema_ws_5m import start_ema_ws_thread  # ✅ WebSocket EMA 5min
+from strategies.ema_cross import start_ema_ws_thread  # ✅ WebSocket EMA 5min
 from binance.exceptions import BinanceAPIException, BinanceRequestException
 from dotenv import load_dotenv
 from core.state import state
@@ -25,7 +25,7 @@ from core.trailing import update_trailing_sl_and_tp, wait_for_tp_or_exit
 from core.utils import safe_round, retry_order
 from core.trading_utils import calculate_quantity, log_trade, get_mode, get_leverage_from_file
 import subprocess
-import psutil  # Ajoute ce module en haut de ton fichier (pip install psutil si besoin)
+import psutil  # module en haut de ton fichier (pip install psutil si besoin)
 import math
 
 # === Chargement des variables d’environnement (.env) ===

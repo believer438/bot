@@ -9,7 +9,7 @@ default_leverage = int(os.getenv("LEVERAGE", 10))  # 📈 Levier par défaut
 default_quantity_usdt = float(os.getenv("QUANTITY_USDT", 2))  # 💰 Quantité USDT par trade
 
 # 📊 Paramètres de stratégie
-stop_loss_pct = float(os.getenv("STOP_LOSS_PCT", 0.0085))      # % Stop Loss
+stop_loss_pct = float(os.getenv("STOP_LOSS_PCT", 0.008))      # % Stop Loss
 take_profit_pct = float(os.getenv("TAKE_PROFIT_PCT", 0.015))  # % Take Profit
 
 # 🕒 Paramètres de temps

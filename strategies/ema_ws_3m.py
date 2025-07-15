@@ -22,6 +22,9 @@ TELEGRAM_COOLDOWN_SECONDS = 60
 _telegram_last_sent = 0
 _telegram_lock = threading.Lock()
 
+# État WebSocket 3m
+ws_alive = False
+
 def can_send_telegram():
     global _telegram_last_sent
     with _telegram_lock:
@@ -103,16 +106,22 @@ def on_message(ws, message):
             send_telegram(f"❌ Erreur WebSocket 3m : {e}")
 
 def on_open(ws):
+    global ws_alive
+    ws_alive = True
     print("✅ WebSocket EMA 3min connecté.")
     if can_send_telegram():
         send_telegram("✅ WebSocket EMA 3min connecté.")
 
 def on_error(ws, error):
+    global ws_alive
+    ws_alive = False
     print(f"❌ Erreur WebSocket 3m : {error}")
     if can_send_telegram():
         send_telegram(f"❌ Erreur WebSocket EMA 3m : {error}")
 
 def on_close(ws, close_status_code, close_msg):
+    global ws_alive
+    ws_alive = False
     print("🛑 WebSocket EMA 3min fermé.")
     if can_send_telegram():
         send_telegram("🛑 WebSocket EMA 3min fermé.")
@@ -129,5 +138,51 @@ def start_websocket_3m_thread():
         ws.run_forever()
 
     t = threading.Thread(target=run_socket, daemon=True)
+    t.start()
+    return t
+
+# === Timer de secours 3m ===
+
+def get_live_3m_ema_cross():
+    try:
+        klines = client.get_klines(symbol=symbol, interval="3m", limit=ema_window_long + 10)
+        closes_3m = [float(k[4]) for k in klines[:-1]]  # exclure dernière bougie incomplète
+        last_price = float(client.get_symbol_ticker(symbol=symbol)['price'])
+        closes_3m.append(last_price)
+
+        closes_series = pd.Series(closes_3m)
+        ema20 = EMAIndicator(closes_series, window=ema_window_short).ema_indicator()
+        ema50 = EMAIndicator(closes_series, window=ema_window_long).ema_indicator()
+        return detect_ema_cross(ema20, ema50)
+    except Exception as e:
+        print(f"❌ Erreur get_live_3m_ema_cross : {e}")
+        if can_send_telegram():
+            send_telegram(f"❌ Erreur Timer secours 3m : {e}")
+        return None
+
+def start_backup_timer_3m_loop():
+    global _last_signal
+    def loop():
+        timer_started = False
+        while True:
+            time.sleep(5)
+            if not ws_alive:
+                if not timer_started:
+                    send_telegram("⏰ Timer de secours EMA 3min ACTIVÉ (WebSocket OFF)")
+                    timer_started = True
+                signal = get_live_3m_ema_cross()
+                if not signal or signal == _last_signal:
+                    continue
+                trend_5m = get_5m_trend()
+                if trend_5m is None:
+                    continue
+                if (signal == "bullish" and trend_5m == "bullish") or (signal == "bearish" and trend_5m == "bearish"):
+                    trade_on_external_signal(signal, source="timer_secours_3m")
+                    if can_send_telegram():
+                        send_telegram(f"⏰ Timer secours 3m : Trade {signal} confirmé par tendance 5m")
+                    _last_signal = signal
+            else:
+                timer_started = False  # Reset si le WebSocket revient
+    t = threading.Thread(target=loop, daemon=True)
     t.start()
     return t

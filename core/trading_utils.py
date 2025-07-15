@@ -5,9 +5,9 @@ import datetime
 import traceback
 import threading
 
+from core.notifier import send_telegram
 from core.binance_client import client
 from core.utils import safe_round
-from core.telegram_controller import send_telegram
 from core.config import (
     symbol,
     stop_loss_pct,
@@ -43,18 +43,22 @@ def get_mode() -> str:
             if not os.path.exists(mode_file):
                 with open(mode_file, "w") as f:
                     f.write("auto")
+                # Import local pour éviter l'import circulaire
+                from core.telegram_controller import send_telegram
                 send_telegram("⚠️ mode.txt créé automatiquement en mode AUTO")
                 return "auto"
 
             with open(mode_file, "r") as file:
                 mode = file.read().strip().lower()
                 if mode not in ["auto", "alert"]:
+                    from core.telegram_controller import send_telegram
                     send_telegram("⚠️ mode.txt corrompu, passage en mode AUTO")
                     return "auto"
                 return mode
 
     except Exception as e:
         err = traceback.format_exc()
+        from core.telegram_controller import send_telegram
         send_telegram(f"⚠️ Erreur get_mode() : {e}\n{err}")
         return "auto"
 

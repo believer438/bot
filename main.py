@@ -3,7 +3,7 @@ import signal
 import sys
 from core.bot import launch_bot, stop_bot
 from core.telegram_controller import start_bot, stop_telegram_bot
-from strategies.ema_ws_5m import start_ema_ws_thread
+from strategies.ema_cross import start_ema_ws_thread # ✅ WebSocket EMA 5min
 from strategies.ema_ws_3m import start_websocket_3m_thread
 
 def main():

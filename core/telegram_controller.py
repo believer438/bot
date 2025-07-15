@@ -59,7 +59,6 @@ from types import SimpleNamespace
 from core.utils import safe_round
 from core.notifier import send_telegram
 from binance.client import Client
-from core.trade_interface import open_trade
 
 # === Chargement des variables d’environnement (.env) ===
 load_dotenv()
@@ -177,7 +176,7 @@ def status(message):
     except Exception:
         mode_value = "auto"  # Valeur par défaut si fichier absent ou erreur
     mode_label = "AUTO" if mode_value == "auto" else "ALERTE"
-    bot.reply_to(message, f"✅ Sky_trader_bot est bien actif et en mode {mode_label}.")
+    bot.reply_to(message, f"✅ SKY_TRADER est bien actif et en mode {mode_label}.")
 # === FERMETURE MANUELLE ===
 @bot.message_handler(commands=['close'])
 def close(message):
@@ -208,7 +207,7 @@ def mode(message):
         if mode_value in ["auto", "alert"]:
             with open("mode.txt", "w") as f:
                 f.write(mode_value)
-            bot.reply_to(message, f"✅ sky_Trader passe en {mode_value.upper()}")
+            bot.reply_to(message, f"✅ SKY_TRADER passe en {mode_value.upper()}")
         else:
             bot.reply_to(message, "⚠ Mode inconnu. Utilisez /mode auto ou /mode alert.")
     except Exception:
@@ -301,6 +300,7 @@ def handle_all_callbacks(call):
             bot.send_message(chat_id, "⏱️ Ce bouton a expiré. Veuillez réessayer.")
         else:
             raise
+    
 
     try:
         if data == "status":
@@ -437,12 +437,6 @@ def send_current_position(chat_id):
     from core.binance_client import client
     try:
         pos = None
-        positions = client.futures_position_information(symbol=SYMBOL)
-        for p in positions:
-            amt = float(p["positionAmt"])
-            if amt != 0:
-                pos = p
-                break
         positions = client.futures_position_information(symbol=symbol)
         pos = next((p for p in positions if float(p["positionAmt"]) != 0), None)
 
@@ -521,6 +515,15 @@ def send_take_profit(chat_id):
 def send_stop_loss(chat_id):
     from core.binance_client import client
     from core.utils import safe_float
+    # ...imports...
+    text = message.text.strip()
+    main_buttons = [
+        "📊 Statut", "📈 Trader", "🔄 Mode AUTO", "🔔 Mode ALERT",
+        "💰 Alertes de gains", "❓ Aide", "🪙 Levier & Solde", "📚 Plus ➡️"
+    ]
+    if text in main_buttons:
+        handle_main_keyboard(message)
+        return
 
     try:
         positions = client.futures_position_information(symbol=SYMBOL)
@@ -614,22 +617,40 @@ def set_new_sl(message, pos):
         ask_user(bot, message.chat.id, "À combien de % veux-tu placer ton stop loss ? (ex: -0.6 ou 0.2)", lambda m: set_new_sl(m, pos))
 # Fonctions pour sauvegarder les valeurs
 def save_leverage(message):
+    # ...imports...
+    text = message.text.strip()
+    main_buttons = [
+        "📊 Statut", "📈 Trader", "🔄 Mode AUTO", "🔔 Mode ALERT",
+        "💰 Alertes de gains", "❓ Aide", "🪙 Levier & Solde", "📚 Plus ➡️"
+    ]
+    if text in main_buttons:
+        handle_main_keyboard(message)
+        return
     try:
         lev = int(message.text.strip())
         with open("leverage.txt", "w") as f:
             f.write(str(lev))
         bot.reply_to(message, f"✅ Levier changé à x{lev}. Il sera utilisé au prochain trade.")
-    except Exception:
+    except Exception as e:
         log_error(f"[save_leverage] Erreur avec entrée '{message.text.strip()}' : {e}\n{traceback.format_exc()}")
         bot.reply_to(message, "❌ Valeur de levier invalide. Réessaie avec un nombre entier.")
 
 def save_quantity(message):
+    # ...imports...
+    text = message.text.strip()
+    main_buttons = [
+        "📊 Statut", "📈 Trader", "🔄 Mode AUTO", "🔔 Mode ALERT",
+        "💰 Alertes de gains", "❓ Aide", "🪙 Levier & Solde", "📚 Plus ➡️"
+    ]
+    if text in main_buttons:
+        handle_main_keyboard(message)
+        return
     try:
         qty = float(message.text.strip())
         with open("quantity.txt", "w") as f:
             f.write(str(qty))
         bot.reply_to(message, f"✅ Quantité changée à {qty} USDT. Elle sera utilisée au prochain trade.")
-    except Exception:
+    except Exception as e:
         log_error(f"[save_quantity] Erreur avec entrée '{message.text.strip()}' : {e}\n{traceback.format_exc()}")
         bot.reply_to(message, "❌ Valeur de quantité invalide. Réessaie avec un nombre.")
 
@@ -673,12 +694,21 @@ def handle_trade_callbacks(call):
 def receive_quantity(message):
     chat_id = message.chat.id
     text = message.text.strip()
+    # Liste des boutons à intercepter
+    main_buttons = [
+        "📊 Statut", "📈 Trader", "🔄 Mode AUTO", "🔔 Mode ALERT",
+        "💰 Alertes de gains", "❓ Aide", "🪙 Levier & Solde", "📚 Plus ➡️"
+    ]
+    if text in main_buttons:
+        # Appelle directement l'action du bouton
+        handle_main_keyboard(message)
+        return
     try:
         quantity = float(text)
         if quantity <= 0:
             raise ValueError("Quantité invalide")
-    except Exception:
-        log_error(f"[receive_quantity] Erreur avec entrée '{message.text.strip()}' du chat {message.chat.id} : {e}\n{traceback.format_exc()}")
+    except Exception as e:
+        log_error(f"[receive_quantity] Erreur avec entrée '{text}' du chat {chat_id} : {e}\n{traceback.format_exc()}")
         bot.reply_to(message, "❌ Quantité invalide. Envoie un nombre positif.")
         ask_user(bot, chat_id, "💬 Envoie-moi la quantité en USDT (ex: 5) :", receive_quantity)
         return
@@ -690,10 +720,16 @@ def receive_quantity(message):
 
 def receive_leverage(message):
     from core.binance_client import client
+    from core.trade_interface import open_trade
     chat_id = message.chat.id
     text = message.text.strip()
-
-    # Validation du levier
+    main_buttons = [
+        "📊 Statut", "📈 Trader", "🔄 Mode AUTO", "🔔 Mode ALERT",
+        "💰 Alertes de gains", "❓ Aide", "🪙 Levier & Solde", "📚 Plus ➡️"
+    ]
+    if text in main_buttons:
+        handle_main_keyboard(message)
+        return
     try:
         leverage = int(text)
         if leverage <= 0:
@@ -704,18 +740,16 @@ def receive_leverage(message):
         ask_user(bot, chat_id, "💬 Envoie-moi le levier (ex: 10) :", receive_leverage)
         return
 
-    # Récupération du contexte utilisateur
     context = user_trade_context.pop(chat_id, None)
     save_user_trade_context()
-    if not context:
-        bot.send_message(chat_id, "❌ Erreur interne : contexte de trading introuvable.")
+    if not context or "quantity" not in context:
+        bot.send_message(chat_id, "❌ Erreur interne : quantité manquante ou contexte de trading introuvable. Recommence la procédure.")
         return
 
     direction = context["direction"]
-    capital = context["quantity"]  # montant USDT sans levier
+    capital = context["quantity"]
 
     try:
-        # On passe directement le montant USDT et levier à open_trade
         open_trade(direction, quantity=capital, leverage=leverage)
     except Exception as e:
         bot.send_message(chat_id, f"❌ Erreur ouverture position : {e}")

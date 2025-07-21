@@ -580,38 +580,50 @@ def handle_sl_change(message, pos):
 
 
 def set_new_sl(message, pos):
+    text = message.text.strip()
+    main_buttons = [
+        "📊 Statut", "📈 Trader", "🔄 Mode AUTO", "🔔 Mode ALERT",
+        "💰 Alertes de gains", "❓ Aide", "🪙 Levier & Solde", "📚 Plus ➡️"
+    ]
+    if text in main_buttons:
+        handle_main_keyboard(message)
+        return
     try:
-        # Remplace la virgule par un point pour accepter les deux formats
-        percent_str = message.text.strip().replace(',', '.')
+        percent_str = text.replace(',', '.')
         percent = float(percent_str)
         entry = float(pos["entryPrice"])
         mark = float(pos["markPrice"])
         sens = 1 if float(pos["positionAmt"]) > 0 else -1
         pnl_pct = ((mark - entry) / entry) * 100 * sens
 
-        # Cas valeur positive : autorisé seulement si position gagnante
         if percent > 0:
             if pnl_pct <= 0:
                 bot.reply_to(message, "Impossible : la position n'est pas gagnante, tu ne peux pas placer un SL positif.")
                 return
             new_sl = entry * (1 + sens * percent / 100)
         else:
-            # SL à -X% de perte (toujours autorisé)
             new_sl = entry * (1 + sens * percent / 100)
 
-        client.futures_create_order(
-            symbol=SYMBOL,
-            side="SELL" if sens == 1 else "BUY",
-            type="STOP_MARKET",
-            stopPrice=round(new_sl, 4),
-            closePosition=True,
-            timeInForce="GTC"
-        )
+        # Ajoute un log pour debug
+        print(f"Demande SL à {new_sl} ({percent}%)")
 
-        bot.reply_to(
-            message,
-            f"✅ Nouveau Stop Loss placé à {round(new_sl, 4)} ({percent}% {'gain' if percent > 0 else 'perte'})."
-        )
+        try:
+            client.futures_create_order(
+                symbol=SYMBOL,
+                side="SELL" if sens == 1 else "BUY",
+                type="STOP_MARKET",
+                stopPrice=round(new_sl, 4),
+                closePosition=True,
+                timeInForce="GTC"
+            )
+            bot.reply_to(
+                message,
+                f"✅ Nouveau Stop Loss placé à {round(new_sl, 4)} ({percent}% {'gain' if percent > 0 else 'perte'})."
+            )
+        except Exception as e:
+            bot.reply_to(message, f"❌ Erreur Binance : {e}")
+            print(f"Erreur Binance : {e}")
+
     except Exception as e:
         log_error(f"[set_new_sl] Erreur : {e}\n{traceback.format_exc()}")
         bot.reply_to(message, "❌ Valeur invalide, réessaie avec un nombre (ex: -0.6 ou 0.2).")

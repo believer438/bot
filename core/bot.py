@@ -3,7 +3,8 @@ import time
 import threading
 import traceback
 from binance.client import Client
-from strategies.ema_cross import start_ema_ws_thread  # ✅ WebSocket EMA 5min
+from strategies.ema_cross import start_ema_5m_loop
+from strategies.ema_3m import start_ema_3m_loop
 from binance.exceptions import BinanceAPIException, BinanceRequestException
 from dotenv import load_dotenv
 from core.state import state
@@ -25,7 +26,7 @@ from core.trailing import update_trailing_sl_and_tp, wait_for_tp_or_exit
 from core.utils import safe_round, retry_order
 from core.trading_utils import calculate_quantity, log_trade, get_mode, get_leverage_from_file
 import subprocess
-import psutil  # module en haut de ton fichier (pip install psutil si besoin)
+import psutil
 import math
 
 # === Chargement des variables d’environnement (.env) ===
@@ -40,6 +41,7 @@ tp_thread = None
 stop_event = threading.Event()
 last_bot_tp = None
 last_bot_sl = None
+position_lock = threading.Lock()  # à placer en haut du fichier
 
 # === Vérification que les Futures sont activés sur le compte ===
 def check_futures_permissions():
@@ -47,7 +49,7 @@ def check_futures_permissions():
         account_info = client.futures_account()
         if "canTrade" not in account_info or not account_info["canTrade"]:
             raise Exception("⚠ Les Futures ne sont pas activés sur ce compte Binance.")
-        print("✅ Futures activés sur ce compte Binance.")
+            print("✅ Futures activés sur ce compte Binance.")
     except Exception as e:
         print("❌ Erreur de permission Futures :", e)
         raise
@@ -213,52 +215,51 @@ def manual_close_watcher(stop_event):
         time.sleep(0.1)
 
 # === FONCTION DE SURVEILLANCE DE LA POSITION ===
-# === FONCTION DE SURVEILLANCE DE LA POSITION ===
 def monitor_position(stop_event):
     global last_bot_tp, last_bot_sl
     last_position_amt = None
     last_detected_tp = None
     last_detected_sl = None
 
-    while True:
+    while not stop_event.is_set():
         try:
             positions = client.futures_position_information(symbol=symbol)
+            detected = False
             for pos in positions:
                 if float(pos['positionAmt']) != 0:
-                    if not state.position_open:
-                        send_telegram("⚠ Une position a été détectée ouverte manuellement sur Binance.")
+                    detected = True
+                    with position_lock:
+                        if not state.position_open:
+                            send_telegram("⚠ Une position a été détectée ouverte manuellement sur Binance.")
                         state.position_open = True
                         state.current_entry_price = float(pos['entryPrice'])
                         state.current_direction = "bullish" if float(pos['positionAmt']) > 0 else "bearish"
                         state.current_quantity = abs(float(pos['positionAmt']))
-
-                    # 🟡 Vérifie les ordres ouverts
+                    # Log pour debug
+                    print(f"[monitor_position] Position détectée : {pos['positionAmt']} @ {pos['entryPrice']}")
+                    # Vérifie les ordres ouverts
                     orders = client.futures_get_open_orders(symbol=symbol)
                     tp = None
                     sl = None
-
                     for order in orders:
                         if order['type'] == "TAKE_PROFIT_MARKET":
                             tp = float(order['stopPrice'])
                         if order['type'] == "STOP_MARKET":
                             sl = float(order['stopPrice'])
-                            
                     last_position_amt = float(pos['positionAmt'])
                     break  # Une seule position prise en compte
-                else:
-                    continue
-            else:
-                # Si aucune position détectée : reset
-                if state.position_open:
-                    state.reset_all()
-                    last_detected_tp = None
-                    last_detected_sl = None
-                    last_position_amt = None
-
-            time.sleep(5)
-
+            if not detected:
+                with position_lock:
+                    if state.position_open:
+                        print("[monitor_position] Reset de la position (aucune position détectée)")
+                        state.reset_all()
+                        last_detected_tp = None
+                        last_detected_sl = None
+                        last_position_amt = None
+            time.sleep(1)  # Vérification plus fréquente
         except Exception as e:
             print("Erreur dans monitor_position :", e)
+            traceback.print_exc()
             time.sleep(10)
            
 def is_another_bot_running(lock_file):
@@ -314,11 +315,11 @@ def run_bot():
 
         levier = get_leverage_from_file()
         if change_leverage(symbol, levier):
-            print(f"✅ Levier mis à jour avec succès : {levier}x")
-            send_telegram(f"✅ Levier mis à jour avec succès : {levier}x")  # <-- Ajout du message Telegram
+            print(f"✅ Levier mis à jour avec succès : x{levier}")
+            send_telegram(f"✅ Levier mis à jour avec succès : x{levier}")  # <-- Ajout du message Telegram
         else:
-            print(f"⚠️ Levier non mis à jour : {levier}x")
-            send_telegram(f"⚠️ Levier non mis à jour : {levier}x")  # <-- Ajout du message Telegram
+            print(f"⚠️ Levier non mis à jour : x{levier}")
+            send_telegram(f"⚠️ Levier non mis à jour : x{levier}")  # <-- Ajout du message Telegram
 
         backoff_time = 5
         max_backoff = 60
@@ -368,6 +369,9 @@ def launch_bot():
             send_telegram(f"❌ Bot arrêté : changement de levier échoué sur {symbol}")
             return
 
+        start_ema_5m_loop()   # ← Stratégie EMA 5min (timer 5s)
+        start_ema_3m_loop()   # ← Stratégie EMA 3min
+        
         # Stocker les threads dans les variables globales
         trailing_thread = resilient_thread(auto_set_sl_tp, stop_event)
         tp_thread = resilient_thread(manual_close_watcher, stop_event)

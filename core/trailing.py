@@ -8,9 +8,6 @@ from core.trading_utils import update_trade_status
 from core.config import symbol, take_profit_pct  # <-- Import centralisé
 from core.state import state  # <-- Import de l'état global si besoin
 
-# === Constantes globales ===
-# symbol = "ALGOUSDT"  # <-- supprimé, centralisé dans config.py
-# take_profit_pct = 0.015  # <-- supprimé, centralisé dans config.py
 order_lock = threading.Lock()
 
 # === Calcul du SL dynamique selon le gain atteint ===
@@ -87,14 +84,14 @@ def update_trailing_sl_and_tp(direction, entry_price):
 
             # ⛔ Vérifie si position toujours ouverte (local ET Binance si besoin)
             if not check_position_open(symbol=symbol) or not state.position_open:
-                send_telegram(" 📢 Fin du suivi dynamique SL/TP.")
+                send_telegram(" 💎 Fin du suivi dynamique SL/TP. 🙌")
                 break
 
             # 📢 Notifie à chaque +1%
             next_threshold = max_gain_pct_notified + 1
             if gain_pct >= next_threshold:
                 max_gain_pct_notified = next_threshold
-                send_telegram(f"📊 Gain +{next_threshold:.0f}% atteint ({direction.upper()} - {current_price}$)")
+                send_telegram(f"📊 Gain +{next_threshold:.0f}% atteint ({direction.upper()} - {current_price}$ 🤗)")
 
             # 🛡 Mise à jour SL (n'annule que son propre ordre)
             new_sl = get_trailing_sl(entry_price, current_price, direction)
@@ -123,8 +120,8 @@ def update_trailing_sl_and_tp(direction, entry_price):
                         )
                         trailing_sl_order_id = sl_order["orderId"]
                         current_sl = new_sl
-                        print(f"🔄 SL trailing mis à jour à {new_sl}$ (orderId: {trailing_sl_order_id})")
-                        send_telegram(f"🔄 Stop Loss dynamique mis à jour à {new_sl}$")
+                        print(f"🔵 SL trailing mis à jour à {new_sl}$ (orderId: {trailing_sl_order_id})")
+                        send_telegram(f"🔵 Stop Loss dynamique mis à jour à {new_sl}$🎉...🥳")
                     except Exception as e:
                         send_telegram(f"❌ Erreur création SL dynamique : {e}")
                         traceback.print_exc()
@@ -159,7 +156,7 @@ def update_trailing_sl_and_tp(direction, entry_price):
                         trailing_tp_order_id = tp_order["orderId"]
                         current_tp_pct = new_tp_pct
                         print(f"🎯 TP trailing mis à jour à {new_tp_price}$ (orderId: {trailing_tp_order_id})")
-                        send_telegram(f"🎯 Take Profit dynamique mis à jour à {new_tp_price}$")
+                        send_telegram(f"🎯 Take Profit dynamique mis à jour à {new_tp_price}$ 🥂💰")
                     except Exception as e:
                         send_telegram(f"❌ Erreur création TP dynamique : {e}")
                         traceback.print_exc()
